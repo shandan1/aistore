@@ -14,13 +14,14 @@ import (
 //
 // resolve and validate fqn
 //
-func ResolveFQN(fqn string, bowner Bowner, isLocal ...bool) (parsedFQN fs.ParsedFQN, hrwFQN string, err error) {
+func ResolveFQN(fqn string, bowner Bowner, isLocal ...bool) (parsedFQN fs.ParsedFQN, hrwFQN string, errstr string) {
 	var (
-		errstr string
+		err    error
 		digest uint64
 	)
 	parsedFQN, err = fs.Mountpaths.FQN2Info(fqn)
 	if err != nil {
+		errstr = err.Error()
 		return
 	}
 	// NOTE: "misplaced" (when hrwFQN != fqn) is to be checked separately, via lom.Misplaced()
@@ -33,14 +34,15 @@ func ResolveFQN(fqn string, bowner Bowner, isLocal ...bool) (parsedFQN fs.Parsed
 	parsedFQN.Digest = digest
 	if len(isLocal) == 0 {
 		if !bowner.Get().IsLocal(parsedFQN.Bucket) && bckIsLocal {
-			err = fmt.Errorf("parsed local bucket (%s) for FQN (%s) does not exist", parsedFQN.Bucket, fqn)
+			errstr = fmt.Sprintf("local bucket (%s) for FQN (%s) does not exist", parsedFQN.Bucket, fqn)
 			return
 		}
 	} else {
 		bckIsLocal = isLocal[0] // caller has already done the above
 	}
 	if bckIsLocal != parsedFQN.IsLocal {
-		err = fmt.Errorf("%s (%s/%s) - bucket locality mismatch (provided: %t, parsed: %t)", fqn, parsedFQN.Bucket, parsedFQN.Objname, bckIsLocal, parsedFQN.IsLocal)
+		errstr = fmt.Sprintf("%s (%s/%s) - bucket locality mismatch (%t != %t)",
+			fqn, parsedFQN.Bucket, parsedFQN.Objname, bckIsLocal, parsedFQN.IsLocal)
 	}
 	return
 }

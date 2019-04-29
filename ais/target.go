@@ -1449,9 +1449,9 @@ func (renctx *renamectx) walkf(fqn string, osfi os.FileInfo, err error) error {
 		return nil
 	}
 	// FIXME: ignoring "misplaced" (non-error) and errors that ResolveFQN may return
-	parsedFQN, _, err := cluster.ResolveFQN(fqn, nil, true /* bucket is local */)
+	parsedFQN, _, errstr := cluster.ResolveFQN(fqn, nil, true /* bucket is local */)
 	contentType, bucket, objname := parsedFQN.ContentType, parsedFQN.Bucket, parsedFQN.Objname
-	if err == nil {
+	if errstr == "" {
 		if bucket != renctx.bucketFrom {
 			return fmt.Errorf("unexpected: bucket %s != %s bucketFrom", bucket, renctx.bucketFrom)
 		}

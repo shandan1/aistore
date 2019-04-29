@@ -450,67 +450,49 @@ func (lom *LOM) Clone(fqn string) *LOM {
 }
 
 func (lom *LOM) init(bckProvider string) (errstr string) {
+	var bpresent bool
 	bowner := lom.T.GetBowner()
-	// resolve fqn
+	if bckProvider != "" {
+		val, err := cmn.BckProviderFromStr(bckProvider)
+		if err != nil {
+			return err.Error()
+		}
+		lom.BckIsLocal = val == cmn.LocalBs
+		bckProvider = cmn.BckProviderFromLocal(lom.BckIsLocal)
+	}
 	if lom.Bucket == "" || lom.Objname == "" {
-		cmn.Assert(lom.FQN != "")
-		if errstr = lom.resolveFQN(bowner); errstr != "" {
+		if bckProvider != "" {
+			lom.ParsedFQN, lom.HrwFQN, errstr = ResolveFQN(lom.FQN, nil, lom.BckIsLocal)
+		} else {
+			lom.ParsedFQN, lom.HrwFQN, errstr = ResolveFQN(lom.FQN, bowner)
+			bckProvider = cmn.BckProviderFromLocal(lom.ParsedFQN.IsLocal)
+		}
+		if errstr != "" {
 			return
 		}
 		lom.Bucket, lom.Objname = lom.ParsedFQN.Bucket, lom.ParsedFQN.Objname
-		if lom.Bucket == "" || lom.Objname == "" {
-			cmn.Assert(false) // DEBUG
-			return
-		}
-		if bckProvider == "" {
-			bckProvider = cmn.BckProviderFromLocal(lom.ParsedFQN.IsLocal)
-		}
 	}
-
 	lom.md.uname = Bo2Uname(lom.Bucket, lom.Objname)
 	// bucketmd, bckIsLocal, bprops
 	lom.bucketMD = bowner.Get()
-	if err := lom.initBckIsLocal(bckProvider); err != nil {
-		return err.Error()
+	if bckProvider == "" {
+		lom.BckIsLocal = lom.bucketMD.IsLocal(lom.Bucket)
+		bckProvider = cmn.BckProviderFromLocal(lom.BckIsLocal)
 	}
-	lom.BckProps, _ = lom.bucketMD.Get(lom.Bucket, lom.BckIsLocal)
+	lom.BckProps, bpresent = lom.bucketMD.Get(lom.Bucket, lom.BckIsLocal)
+	if lom.BckIsLocal && !bpresent {
+		return fmt.Sprintf("%s local bucket %s", lom.Bucket, cmn.DoesNotExist)
+	}
 	if lom.FQN == "" {
 		lom.FQN, lom.ParsedFQN.Digest, errstr = FQN(fs.ObjectType, lom.Bucket, lom.Objname, lom.BckIsLocal)
 	}
 	if lom.ParsedFQN.Bucket == "" || lom.ParsedFQN.Objname == "" {
-		if errstr = lom.resolveFQN(nil, lom.BckIsLocal); errstr != "" {
-			return
-		}
+		lom.ParsedFQN, lom.HrwFQN, errstr = ResolveFQN(lom.FQN, nil, lom.BckIsLocal)
 	}
-	cmn.Assert(lom.ParsedFQN.Digest != 0)
-	return
-}
-
-func (lom *LOM) resolveFQN(bowner Bowner, bckIsLocal ...bool) (errstr string) {
-	var err error
-	if len(bckIsLocal) == 0 {
-		lom.ParsedFQN, lom.HrwFQN, err = ResolveFQN(lom.FQN, bowner)
-	} else {
-		lom.ParsedFQN, lom.HrwFQN, err = ResolveFQN(lom.FQN, nil, lom.BckIsLocal)
-	}
-	if err != nil {
-		errstr = err.Error()
+	if lom.BucketProvider == "" {
+		lom.BucketProvider = bckProvider
 	}
 	return
-}
-
-func (lom *LOM) initBckIsLocal(bckProvider string) error {
-	if bckProvider == cmn.CloudBs {
-		lom.BckIsLocal = false
-	} else if bckProvider == cmn.LocalBs {
-		if !lom.bucketMD.IsLocal(lom.Bucket) {
-			return fmt.Errorf("%s local bucket %s for local provider", lom.Bucket, cmn.DoesNotExist)
-		}
-		lom.BckIsLocal = true
-	} else {
-		lom.BckIsLocal = lom.bucketMD.IsLocal(lom.Bucket)
-	}
-	return nil
 }
 
 // Local Object Metadata (LOM) - is cached. Respectively, lifecycle of any given LOM
