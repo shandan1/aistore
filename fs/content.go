@@ -115,10 +115,7 @@ func (f *ContentSpecMgr) GenContentFQN(fqn, contentType, prefix string) string {
 }
 
 func (f *ContentSpecMgr) GenContentParsedFQN(parsedFQN ParsedFQN, contentType, prefix string) (fqn string) {
-	spec, ok := f.RegisteredContentTypes[contentType]
-	if !ok {
-		cmn.AssertMsg(false, fmt.Sprintf("Invalid content type '%s'", contentType))
-	}
+	spec, _ := f.RegisteredContentTypes[contentType]
 	fqn = f.FQN(
 		parsedFQN.MpathInfo,
 		contentType,
@@ -156,7 +153,7 @@ func (f *ContentSpecMgr) FileSpec(fqn string) (resolver ContentResolver, info *C
 
 func (f *ContentSpecMgr) FQN(mi *MountpathInfo, contentType string, bckIsLocal bool, bucket, objName string) (fqn string) {
 	if _, ok := f.RegisteredContentTypes[contentType]; !ok {
-		cmn.AssertMsg(false, fmt.Sprintf("contentType %s was not registered", contentType))
+		cmn.AssertMsg(false, contentType)
 	}
 	return mi.MakePathBucketObject(contentType, bucket, objName, bckIsLocal)
 }

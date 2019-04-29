@@ -2360,7 +2360,7 @@ func (t *targetrunner) renameBucketObject(contentType, bucketFrom, objnameFrom, 
 	}
 	bucketmd := t.bmdowner.get()
 	bckIsLocalFrom := bucketmd.IsLocal(bucketFrom)
-	fqn, _, errstr := cluster.FQN(contentType, bucketFrom, objnameFrom, bckIsLocalFrom)
+	fqn, _, errstr := cluster.HrwFQN(contentType, bucketFrom, objnameFrom, bckIsLocalFrom)
 	if errstr != "" {
 		return
 	}
@@ -2371,7 +2371,7 @@ func (t *targetrunner) renameBucketObject(contentType, bucketFrom, objnameFrom, 
 	// local rename
 	if si.DaemonID == t.si.DaemonID {
 		bckIsLocalTo := bucketmd.IsLocal(bucketTo)
-		newFQN, _, errstr = cluster.FQN(contentType, bucketTo, objnameTo, bckIsLocalTo)
+		newFQN, _, errstr = cluster.HrwFQN(contentType, bucketTo, objnameTo, bckIsLocalTo)
 		if errstr != "" {
 			return
 		}

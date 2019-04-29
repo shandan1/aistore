@@ -77,7 +77,7 @@ func (mfs *MountedFS) FQN2MpathInfo(fqn string) (info *MountpathInfo, relativePa
 	)
 	for mpath, mpathInfo := range availablePaths {
 		l := len(mpath)
-		if ll > l && fqn[0:l] == mpath && l > max {
+		if ll > l && l > max && fqn[0:l] == mpath {
 			info = mpathInfo
 			relativePath = fqn[l+1:]
 			max = l

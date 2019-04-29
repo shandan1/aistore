@@ -5,7 +5,6 @@
 package cluster
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/NVIDIA/aistore/fs"
@@ -25,9 +24,8 @@ func ResolveFQN(fqn string, bowner Bowner, isLocal ...bool) (parsedFQN fs.Parsed
 		return
 	}
 	// NOTE: "misplaced" (when hrwFQN != fqn) is to be checked separately, via lom.Misplaced()
-	hrwFQN, digest, errstr = FQN(parsedFQN.ContentType, parsedFQN.Bucket, parsedFQN.Objname, parsedFQN.IsLocal)
+	hrwFQN, digest, errstr = HrwFQN(parsedFQN.ContentType, parsedFQN.Bucket, parsedFQN.Objname, parsedFQN.IsLocal)
 	if errstr != "" {
-		err = errors.New(errstr)
 		return
 	}
 	bckIsLocal := parsedFQN.IsLocal
@@ -47,7 +45,7 @@ func ResolveFQN(fqn string, bowner Bowner, isLocal ...bool) (parsedFQN fs.Parsed
 	return
 }
 
-func FQN(contentType, bucket, objname string, isLocal bool) (fqn string, digest uint64, errstr string) {
+func HrwFQN(contentType, bucket, objname string, isLocal bool) (fqn string, digest uint64, errstr string) {
 	var mpathInfo *fs.MountpathInfo
 	if mpathInfo, digest, errstr = hrwMpath(bucket, objname); errstr == "" {
 		fqn = fs.CSM.FQN(mpathInfo, contentType, isLocal, bucket, objname)

@@ -450,7 +450,7 @@ func (lom *LOM) Clone(fqn string) *LOM {
 }
 
 func (lom *LOM) init(bckProvider string) (errstr string) {
-	var bpresent bool
+	var bpresent, fromfqn bool
 	bowner := lom.T.GetBowner()
 	if bckProvider != "" {
 		val, err := cmn.BckProviderFromStr(bckProvider)
@@ -471,9 +471,10 @@ func (lom *LOM) init(bckProvider string) (errstr string) {
 			return
 		}
 		lom.Bucket, lom.Objname = lom.ParsedFQN.Bucket, lom.ParsedFQN.Objname
+		fromfqn = true
 	}
 	lom.md.uname = Bo2Uname(lom.Bucket, lom.Objname)
-	// bucketmd, bckIsLocal, bprops
+	// bucketmd, local, bprops
 	lom.bucketMD = bowner.Get()
 	if bckProvider == "" {
 		lom.BckIsLocal = lom.bucketMD.IsLocal(lom.Bucket)
@@ -483,11 +484,16 @@ func (lom *LOM) init(bckProvider string) (errstr string) {
 	if lom.BckIsLocal && !bpresent {
 		return fmt.Sprintf("%s local bucket %s", lom.Bucket, cmn.DoesNotExist)
 	}
-	if lom.FQN == "" {
-		lom.FQN, lom.ParsedFQN.Digest, errstr = FQN(fs.ObjectType, lom.Bucket, lom.Objname, lom.BckIsLocal)
-	}
-	if lom.ParsedFQN.Bucket == "" || lom.ParsedFQN.Objname == "" {
-		lom.ParsedFQN, lom.HrwFQN, errstr = ResolveFQN(lom.FQN, nil, lom.BckIsLocal)
+	if !fromfqn {
+		lom.ParsedFQN.MpathInfo, lom.ParsedFQN.Digest, errstr = hrwMpath(lom.Bucket, lom.Objname)
+		if errstr != "" {
+			return
+		}
+		lom.ParsedFQN.ContentType = fs.ObjectType
+		lom.FQN = fs.CSM.FQN(lom.ParsedFQN.MpathInfo, fs.ObjectType, lom.BckIsLocal, lom.Bucket, lom.Objname)
+		lom.HrwFQN = lom.FQN
+		lom.ParsedFQN.IsLocal = lom.BckIsLocal
+		lom.ParsedFQN.Bucket, lom.ParsedFQN.Objname = lom.Bucket, lom.Objname
 	}
 	if lom.BucketProvider == "" {
 		lom.BucketProvider = bckProvider
@@ -811,7 +817,7 @@ func lomFromLmeta(md *lmeta, bmd *BMD) (lom *LOM, errstr string) {
 	lom.exists = exists
 	if exists {
 		lom.BckIsLocal = local
-		lom.FQN, _, errstr = FQN(fs.ObjectType, lom.Bucket, lom.Objname, lom.BckIsLocal)
+		lom.FQN, _, errstr = HrwFQN(fs.ObjectType, lom.Bucket, lom.Objname, lom.BckIsLocal)
 	}
 	return
 }
