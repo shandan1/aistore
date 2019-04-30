@@ -1518,7 +1518,8 @@ func (t *targetrunner) getFromNeighbor(r *http.Request, lom *cluster.LOM, smap *
 		cksumType  = response.Header.Get(cmn.HeaderObjCksumType)
 		cksum      = cmn.NewCksum(cksumType, cksumValue)
 		version    = response.Header.Get(cmn.HeaderObjVersion)
-		workFQN    = lom.GenFQN(fs.WorkfileType, fs.WorkfileRemote)
+		tie        = uint16(uintptr(unsafe.Pointer(lom)) & 0xffff)
+		workFQN    = fs.CSM.GenContentParsedFQN(lom.ParsedFQN, fs.WorkfileType, fs.WorkfileRemote, tie)
 		atimeStr   = response.Header.Get(cmn.HeaderObjAtime)
 	)
 
@@ -1556,10 +1557,6 @@ func (t *targetrunner) getFromNeighbor(r *http.Request, lom *cluster.LOM, smap *
 
 // FIXME: recomputes checksum if called with a bad one (optimize)
 func (t *targetrunner) GetCold(ct context.Context, lom *cluster.LOM, prefetch bool) (errstr string, errcode int) {
-	var (
-		err             error
-		vchanged, crace bool
-	)
 	if prefetch {
 		if !t.rtnamemap.TryLock(lom.Uname(), true) {
 			glog.Infof("prefetch: cold GET race: %s - skipping", lom)
@@ -1568,7 +1565,12 @@ func (t *targetrunner) GetCold(ct context.Context, lom *cluster.LOM, prefetch bo
 	} else {
 		t.rtnamemap.Lock(lom.Uname(), true) // one cold-GET at a time
 	}
-	workFQN := lom.GenFQN(fs.WorkfileType, fs.WorkfileColdget)
+	var (
+		err             error
+		vchanged, crace bool
+		tie             = uint16(uintptr(unsafe.Pointer(lom)) & 0xffff)
+		workFQN         = fs.CSM.GenContentParsedFQN(lom.ParsedFQN, fs.WorkfileType, fs.WorkfileColdget, tie)
+	)
 	if err, errcode = getcloudif().getobj(ct, workFQN, lom); err != nil {
 		errstr = fmt.Sprintf("%s: GET failed, err: %v", lom, err)
 		t.rtnamemap.Unlock(lom.Uname(), true)
@@ -2141,7 +2143,8 @@ func (t *targetrunner) Receive(workFQN string, reader io.ReadCloser, lom *cluste
 
 func (roi *recvObjInfo) init() {
 	roi.started = time.Now()
-	roi.workFQN = roi.lom.GenFQN(fs.WorkfileType, fs.WorkfilePut)
+	tie := uint16(uintptr(unsafe.Pointer(roi)) & 0xffff)
+	roi.workFQN = fs.CSM.GenContentParsedFQN(roi.lom.ParsedFQN, fs.WorkfileType, fs.WorkfilePut, tie)
 	cmn.Assert(roi.lom != nil)
 	cmn.Assert(!roi.migrated || roi.cksumToCheck != nil)
 }

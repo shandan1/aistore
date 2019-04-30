@@ -117,6 +117,15 @@ func init() {
 	shortid.SetDefault(sid)
 }
 
+func GenTie(tie uint16) string {
+	var b [4]byte
+	b[0] = uuidABC[byte((tie>>12)&0x3f)]
+	b[1] = uuidABC[byte((tie>>6)&0x3f)]
+	b[2] = uuidABC[byte((tie>>2)&0x3f)]
+	b[3] = uuidABC[byte(tie&0x3f)]
+	return string(b[0:])
+}
+
 func NewSimpleKVs(entries ...SimpleKVsEntry) SimpleKVs {
 	kvs := make(SimpleKVs, len(entries))
 	for _, entry := range entries {
