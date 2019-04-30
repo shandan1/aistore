@@ -1518,8 +1518,7 @@ func (t *targetrunner) getFromNeighbor(r *http.Request, lom *cluster.LOM, smap *
 		cksumType  = response.Header.Get(cmn.HeaderObjCksumType)
 		cksum      = cmn.NewCksum(cksumType, cksumValue)
 		version    = response.Header.Get(cmn.HeaderObjVersion)
-		tie        = uint16(uintptr(unsafe.Pointer(lom)) & 0xffff)
-		workFQN    = fs.CSM.GenContentParsedFQN(lom.ParsedFQN, fs.WorkfileType, fs.WorkfileRemote, tie)
+		workFQN    = fs.CSM.GenContentParsedFQN(lom.ParsedFQN, fs.WorkfileType, fs.WorkfileRemote)
 		atimeStr   = response.Header.Get(cmn.HeaderObjAtime)
 	)
 
@@ -1568,8 +1567,7 @@ func (t *targetrunner) GetCold(ct context.Context, lom *cluster.LOM, prefetch bo
 	var (
 		err             error
 		vchanged, crace bool
-		tie             = uint16(uintptr(unsafe.Pointer(lom)) & 0xffff)
-		workFQN         = fs.CSM.GenContentParsedFQN(lom.ParsedFQN, fs.WorkfileType, fs.WorkfileColdget, tie)
+		workFQN         = fs.CSM.GenContentParsedFQN(lom.ParsedFQN, fs.WorkfileType, fs.WorkfileColdget)
 	)
 	if err, errcode = getcloudif().getobj(ct, workFQN, lom); err != nil {
 		errstr = fmt.Sprintf("%s: GET failed, err: %v", lom, err)
@@ -2143,8 +2141,7 @@ func (t *targetrunner) Receive(workFQN string, reader io.ReadCloser, lom *cluste
 
 func (roi *recvObjInfo) init() {
 	roi.started = time.Now()
-	tie := uint16(uintptr(unsafe.Pointer(roi)) & 0xffff)
-	roi.workFQN = fs.CSM.GenContentParsedFQN(roi.lom.ParsedFQN, fs.WorkfileType, fs.WorkfilePut, tie)
+	roi.workFQN = fs.CSM.GenContentParsedFQN(roi.lom.ParsedFQN, fs.WorkfileType, fs.WorkfilePut)
 	cmn.Assert(roi.lom != nil)
 	cmn.Assert(!roi.migrated || roi.cksumToCheck != nil)
 }

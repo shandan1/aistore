@@ -39,9 +39,8 @@ const (
 	// Constant seeds for UUID generator
 	uuidWorker = 1
 	uuidSeed   = 17
-	// Alphabet used for generating UUIDs - it is similar to the
-	// shortid.DEFAULT_ABC with the difference that is more random and hopefully
-	// `-` and `_` are not so frequently picked.
+	// Alphabet for generating UUIDs - similar to the shortid.DEFAULT_ABC
+	// NOTE: len(uuidABC) > 0x3f - see GenTie()
 	uuidABC = "5nZJDft6LuzsjGNpPwY7r_Qa3-9vehq4i1cV2FROo8yHSlC0BUEdWbIxMmTgKXAk"
 
 	// misc
@@ -110,6 +109,8 @@ type (
 	}
 )
 
+var rtie atomic.Int32
+
 func init() {
 	sid := shortid.MustNew(uuidWorker /* worker */, uuidABC, uuidSeed /* seed */)
 	// NOTE: `shortid` library uses 01/2016 as starting timestamp, maybe we
@@ -117,13 +118,11 @@ func init() {
 	shortid.SetDefault(sid)
 }
 
-func GenTie(tie uint16) string {
-	var b [4]byte
-	b[0] = uuidABC[byte((tie>>12)&0x3f)]
-	b[1] = uuidABC[byte((tie>>6)&0x3f)]
-	b[2] = uuidABC[byte((tie>>2)&0x3f)]
-	b[3] = uuidABC[byte(tie&0x3f)]
-	return string(b[0:])
+func GenTie() string {
+	tie := rtie.Add(1)
+	b0 := uuidABC[byte(tie&0x3f)]
+	b1 := uuidABC[byte((-tie)&0x3f)]
+	return string([]byte{b0, b1})
 }
 
 func NewSimpleKVs(entries ...SimpleKVsEntry) SimpleKVs {

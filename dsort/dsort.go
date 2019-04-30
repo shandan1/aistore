@@ -20,7 +20,6 @@ import (
 	"sort"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/NVIDIA/aistore/3rdparty/atomic"
 	"github.com/NVIDIA/aistore/3rdparty/glog"
@@ -288,8 +287,7 @@ func (m *Manager) createShard(s *extract.Shard) (err error) {
 	if errStr != "" {
 		return errors.New(errStr)
 	}
-	tie := uint16(uintptr(unsafe.Pointer(lom)) & 0xffff)
-	workFQN := fs.CSM.GenContentParsedFQN(lom.ParsedFQN, filetype.DSortWorkfileType, filetype.WorkfileCreateShard, tie)
+	workFQN := fs.CSM.GenContentParsedFQN(lom.ParsedFQN, filetype.DSortWorkfileType, filetype.WorkfileCreateShard)
 
 	// Check if aborted
 	select {

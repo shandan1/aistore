@@ -13,7 +13,6 @@ import (
 	"os"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/NVIDIA/aistore/3rdparty/atomic"
 	"github.com/NVIDIA/aistore/3rdparty/glog"
@@ -765,8 +764,7 @@ func (m *Manager) makeRecvShardFunc() transport.Receive {
 
 			glog.Warningf("shard (%s) already exists, overriding", lom)
 		}
-		tie := uint16(uintptr(unsafe.Pointer(lom)) & 0xffff)
-		workFQN := fs.CSM.GenContentParsedFQN(lom.ParsedFQN, filetype.DSortWorkfileType, filetype.WorkfileRecvShard, tie)
+		workFQN := fs.CSM.GenContentParsedFQN(lom.ParsedFQN, filetype.DSortWorkfileType, filetype.WorkfileRecvShard)
 		rc := ioutil.NopCloser(object)
 		if err := m.ctx.t.Receive(workFQN, rc, lom, cluster.WarmGet, nil); err != nil {
 			glog.Error(err)

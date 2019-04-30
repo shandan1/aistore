@@ -6,7 +6,6 @@ package mirror
 
 import (
 	"os"
-	"unsafe"
 
 	"github.com/NVIDIA/aistore/3rdparty/glog"
 	"github.com/NVIDIA/aistore/cluster"
@@ -49,11 +48,9 @@ loop:
 }
 
 func copyTo(lom *cluster.LOM, mpathInfo *fs.MountpathInfo, buf []byte) (err error) {
-	mp := lom.ParsedFQN.MpathInfo
-	lom.ParsedFQN.MpathInfo = mpathInfo // to generate work fname
-	tie := uint16(uintptr(unsafe.Pointer(lom)) & 0xffff)
-	workFQN := fs.CSM.GenContentParsedFQN(lom.ParsedFQN, fs.WorkfileType, fs.WorkfilePut, tie)
-	lom.ParsedFQN.MpathInfo = mp
+	parsedFQN := lom.ParsedFQN
+	parsedFQN.MpathInfo = mpathInfo
+	workFQN := fs.CSM.GenContentParsedFQN(parsedFQN, fs.WorkfileType, fs.WorkfilePut)
 
 	_, err = lom.CopyObject(workFQN, buf)
 	if err != nil {
