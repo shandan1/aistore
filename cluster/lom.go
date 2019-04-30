@@ -442,7 +442,6 @@ func (lom *LOM) Clone(fqn string) *LOM {
 	dst := &LOM{}
 	*dst = *lom
 	dst.FQN = fqn
-	dst.init("")
 	return dst
 }
 
@@ -468,6 +467,7 @@ func (lom *LOM) init(bckProvider string) (errstr string) {
 			return
 		}
 		lom.Bucket, lom.Objname = lom.ParsedFQN.Bucket, lom.ParsedFQN.Objname
+		lom.BckIsLocal = lom.ParsedFQN.IsLocal
 		fromfqn = true
 	}
 	lom.md.uname = Bo2Uname(lom.Bucket, lom.Objname)
